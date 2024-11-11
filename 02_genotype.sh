@@ -40,7 +40,7 @@ bcftools view -i 'MIN(DP)>5' ${workdir}/02_vcf/${basename_array}.vcf.gz > ${work
 
 #tabix
 ~/anaconda3/bin/tabix ${workdir}/03_vcf/${basename_array}.vcf.gz
-
+########
 # contam check
 # extract all heterozygous sites for this individual
 vcftools --gzvcf ${workdir}/03_vcf/${basename_array}.vcf.gz --min-alleles 2 --max-alleles 2 \
@@ -51,4 +51,19 @@ bcftools query -f '%DP4\n' ${workdir}/03_contam/${basename_array}.recode.vcf > $
 
 # make a histogram of MAF sequencing depth proportion
 Rscript contam_check.r ${workdir}/03_contam/${basename_array}.dp ${basename_array}
+#########
+# alignment stats
+echo ${basename_array} > ${basename_array}.stats
+
+# samtools depth sum of aligned sites
+echo "samtools depth sum of aligned sites" >> ${basename_array}.stats
+samtools depth  ${workdir}/01_bam_files/${basename_array}_final.bam  |  awk '{sum+=$3} END { print "Sum = ",sum}' >> ${basename_array}.stats
+
+# proportion dupes
+echo "proportion duplicates" >> ${basename_array}.stats
+head -n8 ${workdir}/01_bam_files/${basename_array}_markdups_metric_file.txt | tail -n1 | cut -f9 >> ${basename_array}.stats
+
+# number of genotyped sites passing minimum depth filter
+echo "sites genotyped" >> ${basename_array}.stats
+gzip -cd ${workdir}/03_vcf/${basename_array}.vcf.gz | grep -v "^#" | wc -l >> ${basename_array}.stats
 
