@@ -2,10 +2,10 @@
 #SBATCH --chdir=./
 #SBATCH --job-name=genotype
 #SBATCH --partition nocona
-#SBATCH --nodes=1 --ntasks=4
+#SBATCH --nodes=1 --ntasks=8
 #SBATCH --time=48:00:00
 #SBATCH --mem-per-cpu=8G
-#SBATCH --array=1-135
+#SBATCH --array=1-183
 
 
 # Prepend bcftools path to PATH
