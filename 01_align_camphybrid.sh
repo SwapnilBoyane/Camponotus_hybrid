@@ -5,15 +5,11 @@
 #SBATCH --nodes=1 --ntasks=8
 #SBATCH --time=48:00:00
 #SBATCH --mem-per-cpu=8G
-#SBATCH --array=1-183
-
-#use module to load tools or use direct file path
-source activate samtools
+#SBATCH --array=1-196
 
 # define main working directory
 workdir=/lustre/scratch/sboyane/camphybrid
 
-#define file for array job
 basename_array=$( head -n${SLURM_ARRAY_TASK_ID} ${workdir}/basenames.txt | tail -n1 )
 
 # define the reference genome
@@ -35,15 +31,15 @@ bloch=/lustre/work/sboyane/ref/bloch/C019_modoc.fasta
 rm ${workdir}/01_mtDNA/${basename_array}_R1.fastq.gz
 rm ${workdir}/01_mtDNA/${basename_array}_R2.fastq.gz
 
-#Keep selected samples to process for blochnammia (this step is done because a few samples have separate head and gaster FASTA files)
-basename_array2=$( head -n${SLURM_ARRAY_TASK_ID} ${workdir}/basenames2.txt | tail -n1 )
+#Keep selected samples to process for blochnammia (this step is done because a few samples have head and gaster separate files)
+#basename_array2=$( head -n${SLURM_ARRAY_TASK_ID} ${workdir}/basenames2.txt | tail -n1 )
 
 # run bbsplit blochmannia
-/lustre/work/jmanthey/bbmap/bbsplit.sh in1=${workdir}/01_cleaned/${basename_array2}_R1.fastq.gz in2=${workdir}/01_cleaned/${basename_array2}_R2.fastq.gz ref=${bloch} basename=${workdir}/01_blochmannia/${basename_array2}_%.fastq.gz outu1=${workdir}/01_blochmannia/${basename_array2}_R1.fastq.gz outu2=${workdir}/01_blochmannia/${basename_array2}_R2.fastq.gz
+#/lustre/work/jmanthey/bbmap/bbsplit.sh in1=${workdir}/01_cleaned/${basename_array2}_R1.fastq.gz in2=${workdir}/01_cleaned/${basename_array2}_R2.fastq.gz ref=${bloch} basename=${workdir}/01_blochmannia/${basename_array2}_%.fastq.gz outu1=${workdir}/01_blochmannia/${basename_array2}_R1.fastq.gz outu2=${workdir}/01_blochmannia/${basename_array2}_R2.fastq.gz
 
 # remove unnecessary bbsplit output files
-rm ${workdir}/01_blochmannia/${basename_array2}_R1.fastq.gz
-rm ${workdir}/01_blochmannia/${basename_array2}_R2.fastq.gz
+#rm ${workdir}/01_blochmannia/${basename_array2}_R1.fastq.gz
+#rm ${workdir}/01_blochmannia/${basename_array2}_R2.fastq.gz
 
 # run bwa mem
 /home/sboyane/anaconda3/bin/bwa mem -t 8 ${refgenome} ${workdir}/01_cleaned/${basename_array}_R1.fastq.gz ${workdir}/01_cleaned/${basename_array}_R2.fastq.gz > ${workdir}/01_bam_files/${basename_array}.sam
@@ -54,26 +50,26 @@ rm ${workdir}/01_blochmannia/${basename_array2}_R2.fastq.gz
 # remove sam
 rm ${workdir}/01_bam_files/${basename_array}.sam
 
-# clean up the bam file # used Picard.jar for sorting and cleaning bam
-/usr/bin/java -jar /lustre/scratch/sboyane/camphybrid/01_bam_files/picard.jar CleanSam I=${workdir}/01_bam_files/${basename_array}.bam O=${workdir}/01_bam_files/${basename_array}_cleaned.bam
+# clean up the bam file
+~/anaconda3/bin/picard CleanSam I=${workdir}/01_bam_files/${basename_array}.bam O=${workdir}/01_bam_files/${basename_array}_cleaned.bam
 
 # remove the raw bam
 rm ${workdir}/01_bam_files/${basename_array}.bam
 
 # sort the cleaned bam file
-/usr/bin/java -jar /lustre/scratch/sboyane/camphybrid/01_bam_files/picard.jar SortSam I=${workdir}/01_bam_files/${basename_array}_cleaned.bam O=${workdir}/01_bam_files/${basename_array}_cleaned_sorted.bam SORT_ORDER=coordinate
+~/anaconda3/bin/picard  SortSam I=${workdir}/01_bam_files/${basename_array}_cleaned.bam O=${workdir}/01_bam_files/${basename_array}_cleaned_sorted.bam SORT_ORDER=coordinate
 
 # remove the cleaned bam file
 rm ${workdir}/01_bam_files/${basename_array}_cleaned.bam
 
 # add read groups to sorted and cleaned bam file
-/usr/bin/java -jar /lustre/scratch/sboyane/camphybrid/01_bam_files/picard.jar AddOrReplaceReadGroups I=${workdir}/01_bam_files/${basename_array}_cleaned_sorted.bam O=${workdir}/01_bam_files/${basename_array}_cleaned_sorted_rg.bam RGLB=1 RGPL=illumina RGPU=unit1 RGSM=${basename_array}
+~/anaconda3/bin/picard  AddOrReplaceReadGroups I=${workdir}/01_bam_files/${basename_array}_cleaned_sorted.bam O=${workdir}/01_bam_files/${basename_array}_cleaned_sorted_rg.bam RGLB=1 RGPL=illumina RGPU=unit1 RGSM=${basename_array}
 
 # remove cleaned and sorted bam file
 rm ${workdir}/01_bam_files/${basename_array}_cleaned_sorted.bam
 
 # remove duplicates to sorted, cleaned, and read grouped bam file (creates final bam file)
-/usr/bin/java -jar /lustre/scratch/sboyane/camphybrid/01_bam_files/picard.jar MarkDuplicates REMOVE_DUPLICATES=true MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=100 M=${workdir}/01_bam_files/${basename_array}_markdups_metric_file.txt I=${workdir}/01_bam_files/${basename_array}_cleaned_sorted_rg.bam O=${workdir}/01_bam_files/${basename_array}_final.bam
+~/anaconda3/bin/picard  MarkDuplicates REMOVE_DUPLICATES=true MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=100 M=${workdir}/01_bam_files/${basename_array}_markdups_metric_file.txt I=${workdir}/01_bam_files/${basename_array}_cleaned_sorted_rg.bam O=${workdir}/01_bam_files/${basename_array}_final.bam
 
 # remove sorted, cleaned, and read grouped bam file
 rm ${workdir}/01_bam_files/${basename_array}_cleaned_sorted_rg.bam
