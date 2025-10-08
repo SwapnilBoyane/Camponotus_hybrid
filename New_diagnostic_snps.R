@@ -1,9 +1,12 @@
 
+#set wordking directory
 
 setwd("/Volumes/T7/Chapter_1_2025/22_allele_freq")
+
+#load library
 library(tidyverse)
 
-# Read allele frequency tables
+# Read allele frequency flies for each lineage and skip 1st line.
 herc <- read_tsv("pure_Her.frq",
                  col_names = c("CHROM","POS","N_ALLELES","N_CHR_Herc","FREQ1_Herc","FREQ2_Herc"), skip = 1)
 me   <- read_tsv("pure_ME.frq",
@@ -22,8 +25,8 @@ af <- herc %>%
 
 # require ≥ 6 diploid individuals)
 min_n <- 6      
-fix_low  <- 0.05
-fix_high <- 0.95
+fix_low  <- 0
+fix_high <- 1
 
 # Filter to sites with enough data in all lineages
 af_filt <- af %>%
@@ -55,7 +58,6 @@ diag_nov <- af_filt %>% filter(
     (FREQ2_Nov <= fix_low & FREQ2_Herc >= fix_high & FREQ2_ME >= fix_high & FREQ2_MW >= fix_high)
 )
 
-
 # Make diagnostic sets disjoint 
 
 diag_all <- bind_rows(
@@ -73,7 +75,7 @@ table(diag_all$Lineage)
 
 # Write BED per lineage
 write.table(data.frame(CHROM=diag_herc$CHROM, START=diag_herc$POS-1, END=diag_herc$POS),
-            "/Volumes/T7/camphybrid_backup/22_allele_freq/cutoff_1_diag_Herc.bed", sep="\t", quote=FALSE, row.names=FALSE, col.names=FALSE)
+            "cutoff_1_diag_Herc.bed", sep="\t", quote=FALSE, row.names=FALSE, col.names=FALSE)
 
 write.table(data.frame(CHROM=diag_me$CHROM, START=diag_me$POS-1, END=diag_me$POS),
             "cutoff_1_diag_ME.bed", sep="\t", quote=FALSE, row.names=FALSE, col.names=FALSE)
@@ -84,6 +86,6 @@ write.table(data.frame(CHROM=diag_mw$CHROM, START=diag_mw$POS-1, END=diag_mw$POS
 write.table(data.frame(CHROM=diag_nov$CHROM, START=diag_nov$POS-1, END=diag_nov$POS),
             "cutoff_1_diag_Nov.bed", sep="\t", quote=FALSE, row.names=FALSE, col.names=FALSE)
 
-
+# write one table for all lineage
 write.table(data.frame(CHROM=diag_all$CHROM, START=diag_all$POS-1, END=diag_all$POS, Lineage=diag_all$Lineage),
             "cutoff_1_diag_all_lineages.bed", sep="\t", quote=FALSE, row.names=FALSE, col.names=FALSE)
