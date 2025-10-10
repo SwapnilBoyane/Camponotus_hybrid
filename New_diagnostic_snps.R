@@ -23,7 +23,7 @@ af <- herc %>%
   inner_join(select(mw, CHROM, POS, N_CHR_MW, FREQ2_MW), by = c("CHROM","POS")) %>%
   inner_join(select(nov, CHROM, POS, N_CHR_Nov, FREQ2_Nov), by = c("CHROM","POS"))
 
-# require ≥ 6 diploid individuals)
+# require ≥ 6 diploid individuals
 min_n <- 6      
 fix_low  <- 0
 fix_high <- 1
@@ -35,8 +35,7 @@ af_filt <- af %>%
          N_CHR_MW   >= min_n,
          N_CHR_Nov  >= min_n)
 
-
-#  diagnostic SNPs per lineage
+# Diagnostic SNPs per lineage
 
 diag_herc <- af_filt %>% filter(
   (FREQ2_Herc >= fix_high & FREQ2_ME <= fix_low & FREQ2_MW <= fix_low & FREQ2_Nov <= fix_low) |
@@ -68,7 +67,7 @@ diag_all <- bind_rows(
 ) %>%
   mutate(ID = paste(CHROM, POS, sep=":")) %>%
   group_by(ID) %>%
-  filter(n() == 1) %>%  # keep SNPs unique to one lineage
+  filter(n() == 1) %>%  
   ungroup()
 
 table(diag_all$Lineage)
